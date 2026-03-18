@@ -1,0 +1,9 @@
+{
+  "title": "YouTube 测验",
+  "placeholder": "粘贴 YouTube 链接",
+  "generate": "生成测验",
+  "submit": "提交",
+  "score": "得分：{correct}/{total}",
+  "tryAgain": "换个视频",
+  "tryDemo": "试一试"
+}

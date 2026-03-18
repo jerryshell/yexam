@@ -1,0 +1,9 @@
+{
+  "title": "YouTube Exam",
+  "placeholder": "Paste YouTube link",
+  "generate": "Generate",
+  "submit": "Submit",
+  "score": "Score: {correct}/{total}",
+  "tryAgain": "Try Another",
+  "tryDemo": "Try It"
+}

@@ -1,0 +1,15 @@
+- 简洁性
+- 可读性
+- 禁止过度抽象
+- 变量名符合意图
+- 函数排序最高层放在最前面
+- 充分使用 Bun
+- 充分使用 Nuxt UI 组件，尽量减少自定义 CSS
+- 充分使用 Nuxt UI 的语义化颜色类
+- 页面简洁，参考 Google 首页布局
+- https://nuxt.com/raw/docs/4.x/directory-structure.md
+- https://nuxt.com/raw/docs/4.x/guide/concepts/auto-imports.md
+- https://ui.nuxt.com/raw/docs/components.md
+- https://ui.nuxt.com/raw/docs/getting-started/theme/css-variables.md
+- https://i18n.nuxtjs.org/raw/docs/getting-started/usage.md
+- https://ai-sdk.dev/providers/community-providers/openrouter.md
