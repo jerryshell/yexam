@@ -82,7 +82,7 @@ function toHttpError(error: unknown) {
 }
 
 export default defineEventHandler(async (event) => {
-  const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
+  const openrouter = createOpenRouter({ apiKey: import.meta.env.OPENROUTER_API_KEY });
 
   const { url, language = "zh" } = await readBody(event);
 
@@ -111,7 +111,7 @@ export default defineEventHandler(async (event) => {
       : "Generate the questions and options in English.";
 
   const { text } = await generateText({
-    model: openrouter.chat(process.env.OPENROUTER_MODEL!),
+    model: openrouter.chat(import.meta.env.OPENROUTER_MODEL!),
     providerOptions: { openrouter: { response_format: { type: "json_object" } } },
     prompt: `Based on the following YouTube video transcript, generate 5 single-choice questions to test understanding. Each question should have 4 options with only one correct answer.
 
