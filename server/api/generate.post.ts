@@ -1,6 +1,6 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
-import { fetchTranscript } from "youtube-transcript-plus";
+import { InMemoryCache, fetchTranscript } from "youtube-transcript-plus";
 import { z } from "zod";
 
 const questionSchema = z.object({
@@ -12,6 +12,8 @@ const questionSchema = z.object({
 const questionsSchema = z.object({
   questions: z.array(questionSchema),
 });
+
+const cache = new InMemoryCache(1000 * 60 * 10);
 
 function extractVideoId(input: string) {
   const match = input.match(
@@ -31,7 +33,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const videoId = extractVideoId(url);
-  const transcript = (await fetchTranscript(videoId, { lang: "en" }))
+  const transcript = (await fetchTranscript(videoId, { lang: "en", cache }))
     .map((item) => item.text)
     .join(" ");
 
