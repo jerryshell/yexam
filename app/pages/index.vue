@@ -1,12 +1,12 @@
 <script setup lang="ts">
-interface Question {
+interface ExamQuestion {
   question: string;
   options: string[];
   correctIndex: number;
 }
 
-interface GenerateResponse {
-  questions: Question[];
+interface GenerateQuestionsResponse {
+  questions: ExamQuestion[];
 }
 
 const { t, locale, setLocale } = useI18n();
@@ -18,12 +18,12 @@ useSeoMeta({
   ogDescription: () => t("description"),
 });
 
-const url = ref("");
-const questions = ref<Question[]>([]);
-const userAnswers = ref<number[]>([]);
-const submitted = ref(false);
-const loading = ref(false);
-const error = ref("");
+const videoUrl = ref("");
+const examQuestions = ref<ExamQuestion[]>([]);
+const selectedAnswers = ref<number[]>([]);
+const isSubmitted = ref(false);
+const isLoading = ref(false);
+const errorMessage = ref("");
 const selectedLocale = ref(locale.value);
 
 const languageOptions = [
@@ -36,59 +36,60 @@ watch(selectedLocale, (newLocale) => {
 });
 
 async function generateQuestions() {
-  if (!url.value) return;
+  if (!videoUrl.value) return;
 
-  loading.value = true;
-  submitted.value = false;
-  userAnswers.value = [];
-  error.value = "";
+  isLoading.value = true;
+  isSubmitted.value = false;
+  selectedAnswers.value = [];
+  errorMessage.value = "";
 
   try {
-    const result = await $fetch<GenerateResponse>("/api/generate", {
+    const result = await $fetch<GenerateQuestionsResponse>("/api/generate", {
       method: "POST",
-      body: { url: url.value, language: locale.value },
+      body: { url: videoUrl.value, language: locale.value },
     });
-    questions.value = result.questions;
-    userAnswers.value = result.questions.map(() => -1);
+    examQuestions.value = result.questions;
+    selectedAnswers.value = result.questions.map(() => -1);
   } catch (e: unknown) {
     const err = e as { data?: { statusMessage?: string }; message?: string };
-    const message = err.data?.statusMessage ?? err.message ?? String(e);
-    error.value = message;
+    errorMessage.value = err.data?.statusMessage ?? err.message ?? String(e);
   } finally {
-    loading.value = false;
+    isLoading.value = false;
   }
 }
 
-function submitAnswers() {
-  submitted.value = true;
-}
-
-function getScore() {
-  return questions.value.filter((q, i) => userAnswers.value[i] === q.correctIndex).length;
-}
-
-function getOptionClass(qIndex: number, oIndex: number, correctIndex: number) {
-  const isSelected = userAnswers.value[qIndex] === oIndex;
-  const isCorrect = oIndex === correctIndex;
-  const isWrong = submitted.value && isSelected && !isCorrect;
-
-  if (isWrong) return "border-error bg-error/10";
-  if (submitted.value && isCorrect) return "border-success bg-success/10";
-  if (isSelected) return "border-primary bg-primary/10";
-  return "border-muted hover:border-muted/70";
-}
-
 function reset() {
-  url.value = "";
-  questions.value = [];
-  userAnswers.value = [];
-  submitted.value = false;
-  error.value = "";
+  videoUrl.value = "";
+  examQuestions.value = [];
+  selectedAnswers.value = [];
+  isSubmitted.value = false;
+  errorMessage.value = "";
 }
 
 function tryDemo() {
-  url.value = "UF8uR6Z6KLc";
+  videoUrl.value = "UF8uR6Z6KLc";
   generateQuestions();
+}
+
+function submitAnswers() {
+  isSubmitted.value = true;
+}
+
+function getScore() {
+  return examQuestions.value.filter((q, i) => selectedAnswers.value[i] === q.correctIndex).length;
+}
+
+function getOptionClass(qIndex: number, oIndex: number, correctIndex: number) {
+  const isSelected = selectedAnswers.value[qIndex] === oIndex;
+  const isCorrect = oIndex === correctIndex;
+
+  if (isSubmitted.value) {
+    if (isSelected && !isCorrect) return "border-error bg-error/10";
+    if (isCorrect) return "border-success bg-success/10";
+  }
+
+  if (isSelected) return "border-primary bg-primary/10";
+  return "border-muted hover:border-muted/70";
 }
 </script>
 
@@ -110,21 +111,21 @@ function tryDemo() {
         <h1 class="text-3xl font-bold text-center">{{ t("title") }}</h1>
         <p class="text-center text-gray-500 dark:text-gray-400">{{ t("description") }}</p>
 
-        <div v-if="questions.length === 0" class="space-y-4">
+        <div v-if="examQuestions.length === 0" class="space-y-4">
           <UInput
-            v-model="url"
+            v-model="videoUrl"
             :placeholder="t('placeholder')"
             size="xl"
             class="w-full"
             @keyup.enter="generateQuestions"
           />
-          <UAlert v-if="error" color="error" variant="subtle" :title="error" />
+          <UAlert v-if="errorMessage" color="error" variant="subtle" :title="errorMessage" />
           <div class="flex gap-3">
             <UButton
               class="flex-1 justify-center"
               size="xl"
-              :loading="loading"
-              :disabled="!url"
+              :loading="isLoading"
+              :disabled="!videoUrl"
               @click="generateQuestions"
             >
               {{ t("generate") }}
@@ -133,7 +134,7 @@ function tryDemo() {
               variant="outline"
               size="xl"
               class="justify-center"
-              :loading="loading"
+              :loading="isLoading"
               @click="tryDemo"
             >
               {{ t("tryDemo") }}
@@ -143,7 +144,7 @@ function tryDemo() {
 
         <div v-else class="space-y-6">
           <div
-            v-for="(q, qIndex) in questions"
+            v-for="(q, qIndex) in examQuestions"
             :key="qIndex"
             class="p-4 rounded-lg border border-muted space-y-3"
           >
@@ -154,17 +155,17 @@ function tryDemo() {
                 :key="oIndex"
                 class="w-full text-left p-3 rounded-lg border transition-colors"
                 :class="getOptionClass(qIndex, oIndex, q.correctIndex)"
-                :disabled="submitted"
-                @click="userAnswers[qIndex] = oIndex"
+                :disabled="isSubmitted"
+                @click="selectedAnswers[qIndex] = oIndex"
               >
                 {{ option }}
               </button>
             </div>
           </div>
 
-          <div v-if="submitted" class="text-center space-y-4">
+          <div v-if="isSubmitted" class="text-center space-y-4">
             <p class="text-xl font-bold">
-              {{ t("score", { correct: getScore(), total: questions.length }) }}
+              {{ t("score", { correct: getScore(), total: examQuestions.length }) }}
             </p>
             <UButton block size="xl" @click="reset">
               {{ t("tryAgain") }}
@@ -174,7 +175,7 @@ function tryDemo() {
             v-else
             block
             size="xl"
-            :disabled="userAnswers.includes(-1)"
+            :disabled="selectedAnswers.includes(-1)"
             @click="submitAnswers"
           >
             {{ t("submit") }}

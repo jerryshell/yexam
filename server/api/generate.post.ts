@@ -22,7 +22,7 @@ const questionsSchema = z.object({
   questions: z.array(questionSchema),
 });
 
-const cache = new InMemoryCache(1000 * 60 * 10);
+const transcriptCache = new InMemoryCache(1000 * 60 * 10);
 
 function extractVideoId(input: string) {
   const match = input.match(
@@ -98,14 +98,14 @@ export default defineEventHandler(async (event) => {
 
   let transcript: string;
   try {
-    transcript = (await fetchTranscript(videoId, { lang: "en", cache }))
+    transcript = (await fetchTranscript(videoId, { lang: "en", cache: transcriptCache }))
       .map((item) => item.text)
       .join(" ");
   } catch (error) {
     throw toHttpError(error);
   }
 
-  const languagePrompt =
+  const promptByLanguage =
     language === "zh"
       ? "请用简体中文生成问题和选项。"
       : "Generate the questions and options in English.";
@@ -113,20 +113,32 @@ export default defineEventHandler(async (event) => {
   const { text } = await generateText({
     model: openrouter.chat(import.meta.env.OPENROUTER_MODEL!),
     providerOptions: { openrouter: { response_format: { type: "json_object" } } },
-    prompt: `Based on the following YouTube video transcript, generate 5 single-choice questions to test understanding. Each question should have 4 options with only one correct answer.
+    prompt: `${promptByLanguage}
 
-${languagePrompt}
+Based on the following YouTube video transcript, generate exactly 5 single-choice questions to test understanding.
+
+Requirements:
+- Each question has exactly 4 options
+- Only one correct answer per question
+- correctIndex is 0-based (0, 1, 2, or 3)
+- Questions should cover key concepts from the transcript
+- Return valid JSON only
 
 Transcript:
 ${transcript}
 
-Return a JSON object in this exact format:
+Return a JSON object with this exact structure:
 {
   "questions": [
     {
-      "question": "The question text",
+      "question": "Question 1 text",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correctIndex": 0
+    },
+    {
+      "question": "Question 2 text",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 2
     }
   ]
 }`,
