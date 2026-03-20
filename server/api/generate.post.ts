@@ -1,6 +1,15 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
-import { InMemoryCache, fetchTranscript } from "youtube-transcript-plus";
+import {
+  InMemoryCache,
+  YoutubeTranscriptDisabledError,
+  YoutubeTranscriptInvalidVideoIdError,
+  YoutubeTranscriptNotAvailableError,
+  YoutubeTranscriptNotAvailableLanguageError,
+  YoutubeTranscriptTooManyRequestError,
+  YoutubeTranscriptVideoUnavailableError,
+  fetchTranscript,
+} from "youtube-transcript-plus";
 import { z } from "zod";
 
 const questionSchema = z.object({
@@ -22,6 +31,56 @@ function extractVideoId(input: string) {
   return match?.[1] ?? input;
 }
 
+function toHttpError(error: unknown) {
+  if (error instanceof YoutubeTranscriptInvalidVideoIdError) {
+    return createError({ statusCode: 400, statusMessage: "Invalid YouTube VideoId or URL." });
+  }
+
+  if (error instanceof YoutubeTranscriptVideoUnavailableError) {
+    return createError({
+      statusCode: 404,
+      statusMessage: "Video unavailable, may have been deleted or access restricted.",
+      data: { videoId: error.videoId },
+    });
+  }
+
+  if (error instanceof YoutubeTranscriptDisabledError) {
+    return createError({
+      statusCode: 403,
+      statusMessage: "Transcripts are disabled for this video.",
+      data: { videoId: error.videoId },
+    });
+  }
+
+  if (error instanceof YoutubeTranscriptNotAvailableError) {
+    return createError({
+      statusCode: 404,
+      statusMessage: "No transcripts available for this video.",
+      data: { videoId: error.videoId },
+    });
+  }
+
+  if (error instanceof YoutubeTranscriptNotAvailableLanguageError) {
+    return createError({
+      statusCode: 404,
+      statusMessage: "Requested transcript language is not available.",
+      data: { videoId: error.videoId, lang: error.lang, availableLangs: error.availableLangs },
+    });
+  }
+
+  if (error instanceof YoutubeTranscriptTooManyRequestError) {
+    return createError({
+      statusCode: 429,
+      statusMessage: "Too many requests, YouTube has temporarily blocked the current IP.",
+    });
+  }
+
+  return createError({
+    statusCode: 500,
+    statusMessage: error instanceof Error ? error.message : "Failed to fetch transcript.",
+  });
+}
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const openrouter = createOpenRouter({ apiKey: config.openrouterApiKey });
@@ -33,9 +92,19 @@ export default defineEventHandler(async (event) => {
   }
 
   const videoId = extractVideoId(url);
-  const transcript = (await fetchTranscript(videoId, { lang: "en", cache }))
-    .map((item) => item.text)
-    .join(" ");
+
+  if (!videoId) {
+    throw createError({ statusCode: 400, statusMessage: "Invalid YouTube VideoId or URL." });
+  }
+
+  let transcript: string;
+  try {
+    transcript = (await fetchTranscript(videoId, { lang: "en", cache }))
+      .map((item) => item.text)
+      .join(" ");
+  } catch (error) {
+    throw toHttpError(error);
+  }
 
   const languagePrompt =
     language === "zh"
