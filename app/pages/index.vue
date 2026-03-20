@@ -145,7 +145,7 @@ function tryDemo() {
           <div
             v-for="(q, qIndex) in questions"
             :key="qIndex"
-            class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3"
+            class="p-4 rounded-lg border border-muted space-y-3"
           >
             <p class="font-medium">{{ qIndex + 1 }}. {{ q.question }}</p>
             <div class="space-y-2">
