@@ -15,8 +15,4 @@ export default defineNuxtConfig({
       { code: "zh", name: "中文", file: "zh.json" },
     ],
   },
-  runtimeConfig: {
-    openrouterApiKey: process.env.OPENROUTER_API_KEY,
-    openrouterModel: process.env.OPENROUTER_MODEL,
-  },
 });
