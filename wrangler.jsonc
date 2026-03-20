@@ -1,0 +1,13 @@
+{
+  "name": "yexam",
+  "compatibility_date": "2026-03-20",
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+    "traces": {
+      "enabled": true,
+    },
+  },
+}
