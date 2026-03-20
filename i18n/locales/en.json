@@ -1,5 +1,6 @@
 {
   "title": "YouTube Exam",
+  "description": "Generate exam questions from YouTube videos to test your understanding",
   "placeholder": "Paste YouTube link",
   "generate": "Generate",
   "submit": "Submit",

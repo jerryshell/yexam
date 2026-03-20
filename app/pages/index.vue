@@ -12,6 +12,13 @@ interface GenerateResponse {
 const githubUrl = "https://github.com/jerryshell/yexam";
 const { t, locale, setLocale } = useI18n();
 
+useSeoMeta({
+  title: () => t("title"),
+  ogTitle: () => t("title"),
+  description: () => t("description"),
+  ogDescription: () => t("description"),
+});
+
 const url = ref("");
 const questions = ref<Question[]>([]);
 const userAnswers = ref<number[]>([]);
@@ -100,6 +107,7 @@ function tryDemo() {
     <div class="flex-1 flex flex-col items-center justify-center">
       <div class="w-full max-w-2xl space-y-6">
         <h1 class="text-3xl font-bold text-center">{{ t("title") }}</h1>
+        <p class="text-center text-gray-500 dark:text-gray-400">{{ t("description") }}</p>
 
         <div v-if="questions.length === 0" class="space-y-4">
           <UInput

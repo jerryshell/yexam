@@ -1,5 +1,6 @@
 {
   "title": "YouTube 测验",
+  "description": "从 YouTube 视频生成测验题目，检验你的理解程度",
   "placeholder": "粘贴 YouTube 链接",
   "generate": "生成测验",
   "submit": "提交",
