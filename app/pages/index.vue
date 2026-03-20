@@ -51,8 +51,10 @@ async function generateQuestions() {
     });
     questions.value = result.questions;
     userAnswers.value = result.questions.map(() => -1);
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e);
+  } catch (e: unknown) {
+    const err = e as { data?: { statusMessage?: string }; message?: string };
+    const message = err.data?.statusMessage ?? err.message ?? String(e);
+    error.value = message;
   } finally {
     loading.value = false;
   }
