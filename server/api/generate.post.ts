@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   const { text } = await generateText({
     model: openrouter.chat(config.openrouterModel),
     providerOptions: { openrouter: { response_format: { type: "json_object" } } },
-    prompt: `Based on the following YouTube video transcript, generate 5 multiple-choice questions to test understanding. Each question should have 4 options with only one correct answer.
+    prompt: `Based on the following YouTube video transcript, generate 5 single-choice questions to test understanding. Each question should have 4 options with only one correct answer.
 
 ${languagePrompt}
 
