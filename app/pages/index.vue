@@ -9,7 +9,6 @@ interface GenerateResponse {
   questions: Question[];
 }
 
-const githubUrl = "https://github.com/jerryshell/yexam";
 const { t, locale, setLocale } = useI18n();
 
 useSeoMeta({
@@ -96,14 +95,14 @@ function tryDemo() {
 <template>
   <div class="min-h-screen flex flex-col p-4">
     <div class="flex justify-end items-center gap-3 mb-4">
-      <a
-        :href="githubUrl"
+      <UButton
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-github"
+        href="https://github.com/jerryshell/yexam"
         target="_blank"
-        rel="noopener noreferrer"
-        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-      >
-        <UIcon name="i-lucide-github" class="w-8 h-8" />
-      </a>
+      />
+      <UColorModeButton />
       <USelect v-model="selectedLocale" :items="languageOptions" size="sm" class="w-24" />
     </div>
     <div class="flex-1 flex flex-col items-center justify-center">
