@@ -72,10 +72,10 @@ function getOptionClass(qIndex: number, oIndex: number, correctIndex: number) {
   const isCorrect = oIndex === correctIndex;
   const isWrong = submitted.value && isSelected && !isCorrect;
 
-  if (isWrong) return "border-red-500 bg-red-500/10";
-  if (submitted.value && isCorrect) return "border-green-500 bg-green-500/10";
+  if (isWrong) return "border-error bg-error/10";
+  if (submitted.value && isCorrect) return "border-success bg-success/10";
   if (isSelected) return "border-primary bg-primary/10";
-  return "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600";
+  return "border-muted hover:border-muted/70";
 }
 
 function reset() {
