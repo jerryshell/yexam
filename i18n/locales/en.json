@@ -1,10 +1,19 @@
 {
   "title": "YouTube Exam",
-  "description": "Generate exam questions from YouTube videos to test your understanding",
-  "placeholder": "Paste YouTube link",
+  "description": "Generate quiz questions from English YouTube captions to test your understanding",
+  "heroBadge": "English captions, bilingual quiz",
+  "inputLabel": "YouTube URL",
+  "inputHint": "Captions are always fetched in English. Question language follows the current UI language.",
+  "placeholder": "Paste a YouTube URL or video ID",
   "generate": "Generate",
+  "loadingMessage": "Fetching English captions and generating questions",
   "submit": "Submit",
   "score": "Score: {correct}/{total}",
-  "tryAgain": "Try Another",
-  "tryDemo": "Try It"
+  "sourceVideo": "Source video",
+  "videoAuthor": "Channel: {author}",
+  "questionCount": "{count} questions",
+  "transcriptBadge": "Captions: {language}",
+  "outputBadge": "Questions: {language}",
+  "tryAgain": "Try Another Video",
+  "tryDemo": "Try Demo"
 }
