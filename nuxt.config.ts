@@ -4,6 +4,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxt/ui", "@nuxtjs/i18n"],
   css: ["~/assets/css/main.css"],
+  runtimeConfig: {
+    openrouterApiKey: "",
+    openrouterModel: "",
+  },
   ui: {
     fonts: false,
   },

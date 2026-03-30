@@ -44,7 +44,7 @@ const transcriptCache = new InMemoryCache(1000 * 60 * 10);
 
 export default defineEventHandler(async (event) => {
   const { url, language } = await readRequestBody(event);
-  const { apiKey, modelName } = readModelConfig();
+  const { apiKey, modelName } = readModelConfig(event);
   const transcriptResult = await fetchEnglishTranscript(url);
   const prompt = createQuestionPrompt({
     language,
@@ -94,14 +94,15 @@ async function readRequestBody(event: H3Event) {
   return result.data;
 }
 
-function readModelConfig() {
-  const apiKey = import.meta.env.OPENROUTER_API_KEY;
-  const modelName = import.meta.env.OPENROUTER_MODEL;
+function readModelConfig(event: H3Event) {
+  const runtimeConfig = useRuntimeConfig(event);
+  const apiKey = runtimeConfig.openrouterApiKey;
+  const modelName = runtimeConfig.openrouterModel;
 
   if (!apiKey || !modelName) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Missing OPENROUTER_API_KEY or OPENROUTER_MODEL.",
+      statusMessage: "Missing NUXT_OPENROUTER_API_KEY or NUXT_OPENROUTER_MODEL.",
     });
   }
 

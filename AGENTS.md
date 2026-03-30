@@ -9,6 +9,7 @@
 - 页面简洁，参考 Google 首页布局
 - https://nuxt.com/raw/docs/4.x/directory-structure.md
 - https://nuxt.com/raw/docs/4.x/guide/concepts/auto-imports.md
+- https://nuxt.com/raw/docs/4.x/guide/going-further/runtime-config.md
 - https://ui.nuxt.com/raw/docs/components.md
 - https://ui.nuxt.com/raw/docs/getting-started/theme/css-variables.md
 - https://i18n.nuxtjs.org/raw/docs/getting-started/usage.md

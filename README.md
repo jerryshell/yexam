@@ -14,8 +14,8 @@ YouTube 视频测验生成器。根据 YouTube 视频字幕生成单选题，检
 ## 环境变量
 
 ```bash
-OPENROUTER_API_KEY=你的密钥
-OPENROUTER_MODEL=模型名称
+NUXT_OPENROUTER_API_KEY=你的密钥
+NUXT_OPENROUTER_MODEL=模型名称
 ```
 
 ## 开发
