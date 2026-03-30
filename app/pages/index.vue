@@ -58,10 +58,6 @@ const outputLanguageLabel = computed(
     locale.value.toUpperCase(),
 );
 
-const transcriptLanguageLabel = computed(
-  () => videoSummary.value?.transcriptLanguage.toUpperCase() ?? "EN",
-);
-
 watch(locale, (nextLocale) => {
   if (selectedLocale.value !== nextLocale) {
     selectedLocale.value = nextLocale;
@@ -260,9 +256,6 @@ function readErrorMessage(error: unknown) {
               <div class="flex flex-wrap gap-2">
                 <UBadge color="neutral" variant="subtle">
                   {{ t("questionCount", { count: examQuestions.length }) }}
-                </UBadge>
-                <UBadge color="neutral" variant="soft">
-                  {{ t("transcriptBadge", { language: transcriptLanguageLabel }) }}
                 </UBadge>
                 <UBadge color="primary" variant="soft">
                   {{ t("outputBadge", { language: outputLanguageLabel }) }}
