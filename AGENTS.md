@@ -14,3 +14,4 @@
 - https://ui.nuxt.com/raw/docs/getting-started/theme/css-variables.md
 - https://i18n.nuxtjs.org/raw/docs/getting-started/usage.md
 - https://raw.githubusercontent.com/ericmmartin/youtube-transcript-plus/refs/heads/main/README.md
+- https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data.md

@@ -1,5 +1,5 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { generateText } from "ai";
+import { generateText, NoObjectGeneratedError, Output } from "ai";
 import type { H3Event } from "h3";
 import {
   InMemoryCache,
@@ -19,6 +19,16 @@ import { z } from "zod";
 const requestSchema = z.object({
   url: z.string().trim().min(1),
   language: z.enum(["zh", "en"]).default("zh"),
+});
+
+const generatedQuestionSchema = z.object({
+  question: z.string().trim().min(1),
+  options: z.array(z.string().trim().min(1)).min(4),
+  correctIndex: z.number().int().min(0),
+});
+
+const generatedQuestionsSchema = z.object({
+  questions: z.array(generatedQuestionSchema).min(5),
 });
 
 const questionSchema = z.object({
@@ -41,6 +51,7 @@ const responseSchema = z.object({
 });
 
 const transcriptCache = new InMemoryCache(1000 * 60 * 10);
+type GeneratedQuestion = z.infer<typeof generatedQuestionSchema>;
 
 export default defineEventHandler(async (event) => {
   const { url, language } = await readRequestBody(event);
@@ -52,32 +63,16 @@ export default defineEventHandler(async (event) => {
     author: transcriptResult.videoDetails.author,
     transcript: toPlainText(transcriptResult.segments, " "),
   });
-  const openrouter = createOpenRouter({ apiKey });
-  const { text } = await generateText({
-    model: openrouter.chat(modelName),
-    providerOptions: { openrouter: { response_format: { type: "json_object" } } },
-    prompt,
+  const questions = await generateExamQuestions({ apiKey, modelName, prompt, language });
+
+  return responseSchema.parse({
+    video: {
+      title: transcriptResult.videoDetails.title || "YouTube Video",
+      author: transcriptResult.videoDetails.author || "YouTube",
+      transcriptLanguage: transcriptResult.segments[0]?.lang || "en",
+    },
+    questions,
   });
-
-  if (!text) {
-    throw createError({ statusCode: 500, statusMessage: "Empty response from AI." });
-  }
-
-  try {
-    const { questions } = questionsSchema.parse(JSON.parse(text));
-
-    return responseSchema.parse({
-      video: {
-        title: transcriptResult.videoDetails.title || "YouTube Video",
-        author: transcriptResult.videoDetails.author || "YouTube",
-        transcriptLanguage: transcriptResult.segments[0]?.lang || "en",
-      },
-      questions,
-    });
-  } catch (error) {
-    console.error("JSON parse error:", error);
-    throw createError({ statusCode: 500, statusMessage: "Failed to parse AI response." });
-  }
 });
 
 async function readRequestBody(event: H3Event) {
@@ -92,6 +87,120 @@ async function readRequestBody(event: H3Event) {
   }
 
   return result.data;
+}
+
+async function generateExamQuestions(input: {
+  apiKey: string;
+  modelName: string;
+  prompt: string;
+  language: "zh" | "en";
+}) {
+  const openrouter = createOpenRouter({ apiKey: input.apiKey });
+  const model = openrouter.chat(input.modelName, {
+    plugins: [{ id: "response-healing" }],
+  });
+  const prompts = [
+    input.prompt,
+    `${input.prompt}
+
+Additional constraints:
+- Return exactly 5 questions
+- Every question must have exactly 4 unique options
+- Do not number the questions
+- Do not prefix options with A/B/C/D
+- Do not return explanations or extra keys`,
+  ];
+  let lastError: unknown;
+
+  for (const prompt of prompts) {
+    try {
+      const { output } = await generateText({
+        model,
+        output: Output.object({
+          name: "youtube_exam_questions",
+          description: "Five single-choice quiz questions generated from a YouTube transcript.",
+          schema: generatedQuestionsSchema,
+        }),
+        temperature: 0.2,
+        maxRetries: 1,
+        prompt,
+      });
+
+      return normalizeGeneratedQuestions(output.questions);
+    } catch (error) {
+      lastError = error;
+      console.error("AI question generation failed:", error);
+    }
+  }
+
+  throw toAiGenerationError(input.language, lastError);
+}
+
+function normalizeGeneratedQuestions(questions: GeneratedQuestion[]) {
+  const normalizedQuestions = questions.map((question, index) => {
+    return normalizeGeneratedQuestion(question, index);
+  });
+  const uniqueQuestions = normalizedQuestions.filter((question, index, items) => {
+    const currentQuestion = question.question.toLowerCase();
+    return items.findIndex((item) => item.question.toLowerCase() === currentQuestion) === index;
+  });
+
+  if (uniqueQuestions.length < 5) {
+    throw new Error("The AI generated fewer than 5 unique questions.");
+  }
+
+  return questionsSchema.parse({ questions: uniqueQuestions.slice(0, 5) }).questions;
+}
+
+function normalizeGeneratedQuestion(question: GeneratedQuestion, questionIndex: number) {
+  const normalizedQuestion = normalizeQuestionText(question.question);
+  const rawOptions = question.options.map(normalizeOptionText).filter(Boolean);
+  const correctAnswer = rawOptions[question.correctIndex];
+
+  if (!correctAnswer) {
+    throw new Error(`Question ${questionIndex + 1} is missing a valid correct answer.`);
+  }
+
+  const options = pickNormalizedOptions(rawOptions, correctAnswer, questionIndex);
+  const correctIndex = options.indexOf(correctAnswer);
+
+  if (correctIndex === -1) {
+    throw new Error(`Question ${questionIndex + 1} lost its correct answer during cleanup.`);
+  }
+
+  return {
+    question: normalizedQuestion,
+    options,
+    correctIndex,
+  };
+}
+
+function pickNormalizedOptions(rawOptions: string[], correctAnswer: string, questionIndex: number) {
+  const uniqueOptions = [...new Set(rawOptions)];
+
+  if (uniqueOptions.length < 4) {
+    throw new Error(`Question ${questionIndex + 1} has fewer than 4 valid options.`);
+  }
+
+  if (uniqueOptions.length === 4) {
+    return uniqueOptions;
+  }
+
+  const firstFourOptions = uniqueOptions.slice(0, 4);
+
+  if (firstFourOptions.includes(correctAnswer)) {
+    return firstFourOptions;
+  }
+
+  return [...firstFourOptions.slice(0, 3), correctAnswer];
+}
+
+function normalizeQuestionText(value: string) {
+  return value.trim().replace(/^\d+\s*[.)\-:：、]\s+/, "");
+}
+
+function normalizeOptionText(value: string) {
+  return value.trim().replace(/^[A-Da-d]\s*[.)\-:：、]\s+/, "");
 }
 
 function readModelConfig(event: H3Event) {
@@ -121,6 +230,50 @@ async function fetchEnglishTranscript(url: string): Promise<TranscriptResult> {
   } catch (error) {
     throw toHttpError(error);
   }
+}
+
+function toAiGenerationError(language: "zh" | "en", error: unknown) {
+  const detail = toAiErrorDetail(error);
+  const statusMessage =
+    language === "zh"
+      ? detail
+        ? `AI 返回的题目格式不稳定，自动修复失败：${detail}`
+        : "AI 返回的题目格式不稳定，请重试。"
+      : detail
+        ? `The AI returned an invalid quiz format and automatic recovery failed: ${detail}`
+        : "The AI returned an invalid quiz format. Please try again.";
+
+  return createError({
+    statusCode: 502,
+    statusMessage,
+  });
+}
+
+function toAiErrorDetail(error: unknown) {
+  if (NoObjectGeneratedError.isInstance(error)) {
+    return "";
+  }
+
+  if (error instanceof z.ZodError) {
+    const issue = error.issues[0];
+
+    if (!issue) {
+      return "";
+    }
+
+    const path = issue.path.length > 0 ? issue.path.join(".") : "response";
+    return `${path}: ${issue.message}`;
+  }
+
+  if (isErrorWithMessage(error)) {
+    return error.message;
+  }
+
+  return "";
+}
+
+function isErrorWithMessage(error: unknown): error is Error {
+  return error instanceof Error && Boolean(error.message);
 }
 
 function createQuestionPrompt(input: {
