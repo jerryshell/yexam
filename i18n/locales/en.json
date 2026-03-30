@@ -1,9 +1,6 @@
 {
   "title": "YouTube Exam",
   "description": "Paste a video link and get 5 multiple-choice questions instantly.",
-  "heroBadge": "Instant exam",
-  "inputLabel": "Video link",
-  "inputHint": "Paste a YouTube URL or enter a video ID",
   "placeholder": "Enter a YouTube URL or video ID",
   "generate": "Generate Exam",
   "loadingMessage": "Generating your exam...",

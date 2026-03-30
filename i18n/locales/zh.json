@@ -1,9 +1,6 @@
 {
   "title": "YouTube 小测",
   "description": "输入视频链接，快速生成 5 道选择题。",
-  "heroBadge": "即时出题",
-  "inputLabel": "视频链接",
-  "inputHint": "支持粘贴 YouTube 链接或直接输入视频 ID",
   "placeholder": "输入 YouTube 链接或视频 ID",
   "generate": "开始生成",
   "loadingMessage": "正在生成题目…",

@@ -177,7 +177,6 @@ function readErrorMessage(error: unknown) {
       <main class="flex flex-1 items-center justify-center py-8">
         <div v-if="!hasQuestions" class="w-full max-w-2xl space-y-6">
           <div class="space-y-4 text-center">
-            <UBadge color="neutral" variant="subtle">{{ t("heroBadge") }}</UBadge>
             <h1 class="text-4xl font-semibold tracking-tight text-highlighted sm:text-5xl">
               {{ t("title") }}
             </h1>
@@ -188,9 +187,10 @@ function readErrorMessage(error: unknown) {
 
           <UCard>
             <div class="space-y-4">
-              <UFormField :label="t('inputLabel')" :description="t('inputHint')">
+              <UFormField class="w-full">
                 <UInput
                   v-model="videoUrl"
+                  class="w-full"
                   :placeholder="t('placeholder')"
                   icon="i-lucide-link"
                   size="xl"
