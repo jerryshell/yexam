@@ -16,6 +16,8 @@ interface GenerateQuestionsResponse {
   questions: ExamQuestion[];
 }
 
+type LoadingStage = "fetchingTranscript" | "generatingQuestions";
+
 const demoVideoUrl = "https://www.youtube.com/watch?v=UF8uR6Z6KLc";
 
 const languageOptions = [
@@ -40,6 +42,9 @@ const selectedAnswers = ref<number[]>([]);
 const errorMessage = ref("");
 const isLoading = ref(false);
 const isSubmitted = ref(false);
+const loadingStage = ref<LoadingStage>("fetchingTranscript");
+
+let loadingStageTimer: ReturnType<typeof setTimeout> | null = null;
 
 const hasQuestions = computed(() => examQuestions.value.length > 0);
 
@@ -56,6 +61,12 @@ const outputLanguageLabel = computed(
   () =>
     languageOptions.find((option) => option.value === locale.value)?.label ??
     locale.value.toUpperCase(),
+);
+
+const loadingMessage = computed(() =>
+  loadingStage.value === "fetchingTranscript"
+    ? t("loadingFetchTranscript")
+    : t("loadingGenerateQuestions"),
 );
 
 watch(locale, (nextLocale) => {
@@ -77,6 +88,7 @@ async function generateQuestions() {
     return;
   }
 
+  startLoadingStage();
   isLoading.value = true;
   isSubmitted.value = false;
   errorMessage.value = "";
@@ -97,6 +109,7 @@ async function generateQuestions() {
     selectedAnswers.value = [];
     errorMessage.value = readErrorMessage(error);
   } finally {
+    clearLoadingStageTimer();
     isLoading.value = false;
   }
 }
@@ -113,6 +126,21 @@ function resetQuiz() {
 function tryDemo() {
   videoUrl.value = demoVideoUrl;
   return generateQuestions();
+}
+
+function startLoadingStage() {
+  clearLoadingStageTimer();
+  loadingStage.value = "fetchingTranscript";
+  loadingStageTimer = setTimeout(() => {
+    loadingStage.value = "generatingQuestions";
+  }, 1200);
+}
+
+function clearLoadingStageTimer() {
+  if (loadingStageTimer) {
+    clearTimeout(loadingStageTimer);
+    loadingStageTimer = null;
+  }
 }
 
 function submitAnswers() {
@@ -204,7 +232,7 @@ function readErrorMessage(error: unknown) {
                 color="primary"
                 variant="subtle"
                 icon="i-lucide-loader-circle"
-                :title="t('loadingMessage')"
+                :title="loadingMessage"
               />
 
               <UAlert
